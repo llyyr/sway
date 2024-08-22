@@ -1258,6 +1258,10 @@ bool dbusmenu_pointer_enter(void *data, struct wl_pointer *wl_pointer,
 		return false;
 	}
 
+	if (!tray->menu->menu) {
+		return false;
+	}
+
 	struct swaybar_dbusmenu_menu *new_focused_menu =
 	dbusmenu_menu_find_menu_surface(tray->menu->menu, surface);
 
