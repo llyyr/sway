@@ -29,7 +29,7 @@ static void swaybar_dbusmenu_get_layout(struct swaybar_dbusmenu *menu, int id);
 static void swaybar_dbusmenu_draw(struct swaybar_dbusmenu *dbusmenu, int id);
 
 struct swaybar_dbusmenu_hotspot {
-	int x, y, width, height;
+	double x, y, width, height;
 };
 
 struct swaybar_dbusmenu_surface {
@@ -72,7 +72,7 @@ struct swaybar_dbusmenu_menu {
 	struct swaybar_dbusmenu_menu_item *last_hovered_item;
 	list_t *items; // struct swaybar_dbusmenu_menu_item
 	int item_id;
-	int x, y;
+	double x, y;
 };
 
 struct swaybar_dbusmenu {
@@ -81,8 +81,8 @@ struct swaybar_dbusmenu {
 	struct swaybar_seat *seat;
 	struct swaybar_dbusmenu_menu *menu;
 	struct swaybar *bar;
-	int serial;
-	int x, y;
+	uint32_t serial;
+	double x, y;
 };
 
 struct get_layout_callback_data {
@@ -329,7 +329,7 @@ static struct swaybar_dbusmenu_menu *find_parent_menu(struct swaybar_dbusmenu_me
 	return find_parent_menu_under_menu(root_menu, menu);
 }
 
-static bool is_in_hotspot(struct swaybar_dbusmenu_hotspot *hotspot, int x, int y) {
+static bool is_in_hotspot(struct swaybar_dbusmenu_hotspot *hotspot, double x, double y) {
 	if (!hotspot) {
 		return false;
 	}
@@ -512,7 +512,7 @@ static void draw_menu_items(cairo_t *cairo, struct swaybar_dbusmenu_menu *menu,
 		hotspot->x = 0;
 		hotspot->width = *surface_width;
 		if (item->is_separator) {
-			int y = hotspot->y + hotspot->height / 2.0;
+			double y = hotspot->y + hotspot->height / 2.0;
 			cairo_move_to(cairo, *surface_x, y);
 			cairo_line_to(cairo, *surface_x + *surface_width, y);
 			cairo_stroke(cairo);
@@ -638,8 +638,8 @@ static void swaybar_dbusmenu_draw_menu(struct swaybar_dbusmenu_menu *menu,
 		// to find out on which x and y coordinate the submenu should be drawn
 		struct swaybar_dbusmenu_menu_item *item = find_item(menu->dbusmenu, menu->item_id);
 		struct swaybar_output *output = menu->dbusmenu->output;
-		int x = menu->item_id == 0 ? menu->dbusmenu->x : item->hotspot.x / output->scale;
-		int y = menu->item_id == 0 ? menu->dbusmenu->y : item->hotspot.y / output->scale;
+		double x = menu->item_id == 0 ? menu->dbusmenu->x : item->hotspot.x / output->scale;
+		double y = menu->item_id == 0 ? menu->dbusmenu->y : item->hotspot.y / output->scale;
 
 		xdg_positioner_set_offset(positioner, 0, 0);
 		// Need to divide through scale because surface width/height is scaled
@@ -1070,7 +1070,7 @@ static void swaybar_dbusmenu_setup(struct swaybar_dbusmenu *menu) {
 }
 
 void swaybar_dbusmenu_open(struct swaybar_sni *sni, struct swaybar_output *output,
-		struct swaybar_seat *seat, uint32_t serial, int x, int y) {
+		struct swaybar_seat *seat, uint32_t serial, double x, double y) {
 	struct swaybar_dbusmenu *dbusmenu = sni->tray->menu;
 	if (!dbusmenu) {
 		dbusmenu = calloc(1, sizeof(struct swaybar_dbusmenu));
@@ -1085,8 +1085,8 @@ void swaybar_dbusmenu_open(struct swaybar_sni *sni, struct swaybar_output *outpu
 	dbusmenu->output = output;
 	dbusmenu->seat = seat;
 	dbusmenu->serial = serial;
-	dbusmenu->x = seat->pointer.x;
-	dbusmenu->y = seat->pointer.y;
+	dbusmenu->x = x;
+	dbusmenu->y = y;
 	dbusmenu->bar = output->bar;
 
 	swaybar_dbusmenu_setup(dbusmenu);
@@ -1202,8 +1202,8 @@ static void close_unfocused_child_menus(struct swaybar_dbusmenu_menu *menu,
 		struct swaybar_dbusmenu_menu_item *item = menu->items->items[i];
 
 		int scale = menu->dbusmenu->output->scale;
-		int x = seat->pointer.x * scale;
-		int y = seat->pointer.y * scale;
+		double x = seat->pointer.x * scale;
+		double y = seat->pointer.y * scale;
 		if (item->submenu && item->submenu->item_id != 0 &&
 				!is_in_hotspot(&item->hotspot, x, y)) {
 			close_menus_by_id(menu, item->id);
