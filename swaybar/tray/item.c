@@ -334,8 +334,8 @@ void destroy_sni(struct swaybar_sni *sni) {
 }
 
 static void handle_click(struct swaybar_sni *sni, struct swaybar_output *output,
-		struct swaybar_seat *seat, uint32_t serial, int x, int y, uint32_t button,
-		int delta) {
+		struct swaybar_seat *seat, uint32_t serial, double x, double y,
+		uint32_t button, int delta) {
 	const char *method = NULL;
 	struct tray_binding *binding = NULL;
 	wl_list_for_each(binding, &sni->tray->bar->config->tray_bindings, link) {
@@ -406,12 +406,12 @@ static enum hotspot_event_handling icon_hotspot_callback(
 		struct swaybar_sni *sni = tray->items->items[idx];
 		// guess global position since wayland doesn't expose it
 		struct swaybar_config *config = tray->bar->config;
-		int global_x = output->output_x + config->gaps.left + x;
+		double global_x = output->output_x + config->gaps.left + x;
 		bool top_bar = config->position & ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP;
-		int global_y = output->output_y + (top_bar ? config->gaps.top + y:
+		double global_y = output->output_y + (top_bar ? config->gaps.top + y:
 				(int) output->output_height - config->gaps.bottom - y);
 
-		sway_log(SWAY_DEBUG, "Guessing click position at (%d, %d)", global_x, global_y);
+		sway_log(SWAY_DEBUG, "Guessing click position at (%f, %f)", global_x, global_y);
 		// TODO get delta from event
 		handle_click(sni, output, seat, serial, global_x, global_y, button, 1);
 		return HOTSPOT_IGNORE;
