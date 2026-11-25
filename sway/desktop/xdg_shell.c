@@ -292,6 +292,25 @@ static const struct sway_view_impl view_impl = {
 	.destroy = destroy,
 };
 
+static void update_suspended(struct sway_view *view) {
+	struct wlr_xdg_toplevel *toplevel = view->wlr_xdg_toplevel;
+	if (!toplevel->base->initialized || !toplevel->base->surface->mapped ||
+			view->surface_tree == NULL || view->saved_surface_tree != NULL) {
+		return;
+	}
+
+	bool suspended = !view->surface_tree->is_visible;
+	if (toplevel->scheduled.suspended != suspended) {
+		wlr_xdg_toplevel_set_suspended(toplevel, suspended);
+	}
+}
+
+static void handle_visibility(struct wl_listener *listener, void *data) {
+	struct sway_xdg_shell_view *xdg_shell_view =
+		wl_container_of(listener, xdg_shell_view, visibility);
+	update_suspended(&xdg_shell_view->view);
+}
+
 static void handle_commit(struct wl_listener *listener, void *data) {
 	struct sway_xdg_shell_view *xdg_shell_view =
 		wl_container_of(listener, xdg_shell_view, commit);
@@ -313,6 +332,8 @@ static void handle_commit(struct wl_listener *listener, void *data) {
 	if (!xdg_surface->surface->mapped) {
 		return;
 	}
+
+	update_suspended(view);
 
 	struct wlr_box *new_geo = &xdg_surface->geometry;
 	bool new_size = new_geo->width != view->geometry.width ||
@@ -545,6 +566,7 @@ static void handle_destroy(struct wl_listener *listener, void *data) {
 	wl_list_remove(&xdg_shell_view->map.link);
 	wl_list_remove(&xdg_shell_view->unmap.link);
 	wl_list_remove(&xdg_shell_view->commit.link);
+	wl_list_remove(&xdg_shell_view->visibility.link);
 	view->surface_tree = NULL;
 	view->wlr_xdg_toplevel = NULL;
 	if (view->xdg_decoration) {
@@ -592,8 +614,12 @@ void handle_xdg_shell_toplevel(struct wl_listener *listener, void *data) {
 
 	struct wlr_scene_xdg_surface *scene_surface = wlr_scene_xdg_surface_create(
 		xdg_shell_view->view.content_tree, xdg_toplevel->base);
+	wl_list_init(&xdg_shell_view->visibility.link);
 	if (scene_surface != NULL) {
 		xdg_shell_view->view.surface_tree = scene_surface->surface_tree;
+		xdg_shell_view->visibility.notify = handle_visibility;
+		wl_signal_add(&scene_surface->surface_tree->events.visibility,
+			&xdg_shell_view->visibility);
 	}
 	scene_surface = wlr_scene_xdg_surface_create(
 		&xdg_shell_view->view.image_capture_scene->tree, xdg_toplevel->base);

@@ -133,6 +133,8 @@ struct sway_view {
 struct sway_xdg_shell_view {
 	struct sway_view view;
 
+	struct wl_listener visibility;
+
 	struct wlr_scene_tree *image_capture_tree;
 	char *tag;
 
