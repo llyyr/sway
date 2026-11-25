@@ -372,13 +372,15 @@ static struct sway_layer_popup *create_popup(struct wlr_xdg_popup *wlr_popup,
 
 	popup->toplevel = toplevel;
 	popup->wlr_popup = wlr_popup;
-	popup->scene = wlr_scene_xdg_surface_create(parent,
+	struct wlr_scene_xdg_surface *scene = wlr_scene_xdg_surface_create(parent,
 		wlr_popup->base);
 
-	if (!popup->scene) {
+	if (!scene) {
 		free(popup);
 		return NULL;
 	}
+
+	popup->scene = scene->tree;
 
 	popup->destroy.notify = popup_handle_destroy;
 	wl_signal_add(&wlr_popup->events.destroy, &popup->destroy);

@@ -503,6 +503,7 @@ static void handle_unmap(struct wl_listener *listener, void *data) {
 	if (xwayland_view->surface_tree) {
 		wlr_scene_node_destroy(&xwayland_view->surface_tree->node);
 		xwayland_view->surface_tree = NULL;
+		xwayland_view->view.surface_tree = NULL;
 	}
 
 	view_unmap(view);
@@ -512,6 +513,7 @@ static void handle_surface_tree_destroy(struct wl_listener *listener, void *data
 	struct sway_xwayland_view *xwayland_view = wl_container_of(listener, xwayland_view,
 		surface_tree_destroy);
 	xwayland_view->surface_tree = NULL;
+	xwayland_view->view.surface_tree = NULL;
 }
 
 static void handle_map(struct wl_listener *listener, void *data) {
@@ -531,8 +533,9 @@ static void handle_map(struct wl_listener *listener, void *data) {
 	// Put it back into the tree
 	view_map(view, xsurface->surface, xsurface->fullscreen, NULL, false);
 
-	xwayland_view->surface_tree = wlr_scene_subsurface_tree_create(
+	view->surface_tree = wlr_scene_subsurface_tree_create(
 		xwayland_view->view.content_tree, xsurface->surface);
+	xwayland_view->surface_tree = view->surface_tree ? view->surface_tree->tree : NULL;
 
 	if (xwayland_view->surface_tree) {
 		xwayland_view->surface_tree_destroy.notify = handle_surface_tree_destroy;

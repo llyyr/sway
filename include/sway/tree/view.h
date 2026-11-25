@@ -12,6 +12,7 @@
 #include "sway/input/input-manager.h"
 #include "sway/input/seat.h"
 
+struct wlr_scene_subsurface_tree;
 struct sway_container;
 struct sway_xdg_decoration;
 
@@ -68,6 +69,7 @@ struct sway_view {
 
 	struct wlr_scene_tree *scene_tree;
 	struct wlr_scene_tree *content_tree;
+	struct wlr_scene_subsurface_tree *surface_tree;
 	struct wlr_scene_tree *saved_surface_tree;
 	struct wlr_scene_buffer *output_handler;
 

@@ -96,13 +96,15 @@ static struct sway_xdg_popup *popup_create(struct wlr_xdg_popup *wlr_popup,
 		return NULL;
 	}
 
-	popup->xdg_surface_tree = wlr_scene_xdg_surface_create(
+	struct wlr_scene_xdg_surface *scene_surface = wlr_scene_xdg_surface_create(
 		popup->scene_tree, xdg_surface);
-	if (!popup->xdg_surface_tree) {
+	if (!scene_surface) {
 		wlr_scene_node_destroy(&popup->scene_tree->node);
 		free(popup);
 		return NULL;
 	}
+
+	popup->xdg_surface_tree = scene_surface->tree;
 
 	popup->desc.relative = &view->content_tree->node;
 	popup->desc.view = view;
@@ -115,10 +117,12 @@ static struct sway_xdg_popup *popup_create(struct wlr_xdg_popup *wlr_popup,
 		return NULL;
 	}
 
-	popup->image_capture_tree = wlr_scene_xdg_surface_create(image_capture_parent, xdg_surface);
-	if (popup->image_capture_tree == NULL) {
+	scene_surface = wlr_scene_xdg_surface_create(image_capture_parent, xdg_surface);
+	if (scene_surface == NULL) {
 		return NULL;
 	}
+
+	popup->image_capture_tree = scene_surface->tree;
 
 	popup->wlr_xdg_popup = xdg_surface->popup;
 	struct sway_xdg_shell_view *shell_view =
@@ -541,6 +545,7 @@ static void handle_destroy(struct wl_listener *listener, void *data) {
 	wl_list_remove(&xdg_shell_view->map.link);
 	wl_list_remove(&xdg_shell_view->unmap.link);
 	wl_list_remove(&xdg_shell_view->commit.link);
+	view->surface_tree = NULL;
 	view->wlr_xdg_toplevel = NULL;
 	if (view->xdg_decoration) {
 		view->xdg_decoration->view = NULL;
@@ -585,9 +590,16 @@ void handle_xdg_shell_toplevel(struct wl_listener *listener, void *data) {
 	xdg_shell_view->destroy.notify = handle_destroy;
 	wl_signal_add(&xdg_toplevel->events.destroy, &xdg_shell_view->destroy);
 
-	wlr_scene_xdg_surface_create(xdg_shell_view->view.content_tree, xdg_toplevel->base);
-	xdg_shell_view->image_capture_tree =
-		wlr_scene_xdg_surface_create(&xdg_shell_view->view.image_capture_scene->tree, xdg_toplevel->base);
+	struct wlr_scene_xdg_surface *scene_surface = wlr_scene_xdg_surface_create(
+		xdg_shell_view->view.content_tree, xdg_toplevel->base);
+	if (scene_surface != NULL) {
+		xdg_shell_view->view.surface_tree = scene_surface->surface_tree;
+	}
+	scene_surface = wlr_scene_xdg_surface_create(
+		&xdg_shell_view->view.image_capture_scene->tree, xdg_toplevel->base);
+	if (scene_surface != NULL) {
+		xdg_shell_view->image_capture_tree = scene_surface->tree;
+	}
 
 	xdg_toplevel->base->data = xdg_shell_view;
 }

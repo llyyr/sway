@@ -1047,7 +1047,7 @@ void view_center_and_clip_surface(struct sway_view *view) {
 	}
 
 	// only make sure to clip the content if there is content to clip
-	if (!wl_list_empty(&con->view->content_tree->children)) {
+	if (view->surface_tree != NULL) {
 		struct wlr_box clip = {0};
 		if (clip_to_geometry) {
 			clip = (struct wlr_box){
@@ -1057,7 +1057,7 @@ void view_center_and_clip_surface(struct sway_view *view) {
 				.height = con->current.content_height,
 			};
 		}
-		wlr_scene_subsurface_tree_set_clip(&con->view->content_tree->node, &clip);
+		wlr_scene_subsurface_tree_set_clip(view->surface_tree, &clip);
 	}
 }
 
